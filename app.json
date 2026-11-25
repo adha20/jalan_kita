@@ -57,7 +57,8 @@
           "locationWhenInUsePermission": "Izinkan JalanKita mendeteksi koordinat GPS laporan Anda."
         }
       ],
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true

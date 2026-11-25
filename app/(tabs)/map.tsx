@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ScrollView,
   Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { ChevronRight } from 'lucide-react-native';
 import { Theme } from '@/constants/Theme';
@@ -93,6 +93,8 @@ export default function MapScreen() {
             <Image
               source={{ uri: activeReport.photoUrl }}
               style={styles.cardImage}
+              contentFit="cover"
+              transition={200}
             />
 
             <View style={styles.cardContent}>

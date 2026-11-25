@@ -13,6 +13,8 @@ import {
 import { useRouter } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import {
   X,
   Zap,
@@ -33,6 +35,7 @@ export default function CameraScreen() {
   const [facing, setFacing] = useState<CameraType>('back');
   const [flash, setFlash] = useState<'off' | 'on'>('off');
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const cameraRef = useRef<any>(null);
 
   // GPS & Time watermark state
@@ -86,7 +89,7 @@ export default function CameraScreen() {
   }, []);
 
   const handleTakePicture = async () => {
-    if (isCapturing) return;
+    if (isCapturing || !isCameraReady) return;
     setIsCapturing(true);
 
     try {
@@ -94,11 +97,22 @@ export default function CameraScreen() {
 
       if (cameraRef.current && cameraRef.current.takePictureAsync) {
         const result = await cameraRef.current.takePictureAsync({
-          quality: 0.8,
+          quality: 0.85,
           skipProcessing: false,
         });
+
         if (result?.uri) {
-          photoUri = result.uri;
+          // Kompresi & optimalkan gambar agar tidak memakan RAM berlebih dan tidak hitam di Android
+          try {
+            const manip = await manipulateAsync(
+              result.uri,
+              [{ resize: { width: 1200 } }],
+              { compress: 0.8, format: SaveFormat.JPEG }
+            );
+            photoUri = manip.uri || result.uri;
+          } catch {
+            photoUri = result.uri;
+          }
         }
       }
 
@@ -115,7 +129,7 @@ export default function CameraScreen() {
       });
     } catch (e) {
       console.error(e);
-      // Fallback
+      // Fallback sampel gambar jika kamera perangkat bermasalah (misal di emulator)
       router.push({
         pathname: '/report/create',
         params: {
@@ -128,6 +142,46 @@ export default function CameraScreen() {
       });
     } finally {
       setIsCapturing(false);
+    }
+  };
+
+  const handlePickGallery = async () => {
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.85,
+      });
+
+      if (!res.canceled && res.assets && res.assets.length > 0) {
+        const asset = res.assets[0];
+        let photoUri = asset.uri;
+
+        try {
+          const manip = await manipulateAsync(
+            asset.uri,
+            [{ resize: { width: 1200 } }],
+            { compress: 0.8, format: SaveFormat.JPEG }
+          );
+          photoUri = manip.uri || asset.uri;
+        } catch {
+          photoUri = asset.uri;
+        }
+
+        router.push({
+          pathname: '/report/create',
+          params: {
+            photoUri,
+            lat: coords.lat.toString(),
+            lng: coords.lng.toString(),
+            locationName,
+            capturedTime: formattedTime,
+          },
+        });
+      }
+    } catch (err) {
+      console.log('Pick gallery error:', err);
+      handlePickSample();
     }
   };
 
@@ -168,6 +222,7 @@ export default function CameraScreen() {
           style={StyleSheet.absoluteFill}
           facing={facing}
           enableTorch={flash === 'on'}
+          onCameraReady={() => setIsCameraReady(true)}
         />
       ) : (
         <View style={styles.permissionFallback}>
@@ -238,19 +293,19 @@ export default function CameraScreen() {
 
           {/* Shutter & Controls Row */}
           <View style={styles.shutterRow}>
-            {/* Gallery / Preset sample */}
+            {/* Gallery Picker */}
             <TouchableOpacity
               style={styles.sideBtn}
-              onPress={handlePickSample}
+              onPress={handlePickGallery}
               activeOpacity={0.75}>
               <ImageIcon size={26} color="#FFFFFF" />
             </TouchableOpacity>
 
             {/* Main Shutter */}
             <TouchableOpacity
-              style={styles.shutterOuter}
+              style={[styles.shutterOuter, !isCameraReady && { opacity: 0.6 }]}
               onPress={handleTakePicture}
-              disabled={isCapturing}
+              disabled={isCapturing || !isCameraReady}
               activeOpacity={0.7}>
               <View style={styles.shutterInner}>
                 {isCapturing && <ActivityIndicator color={Theme.colors.primary} />}

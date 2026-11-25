@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   SafeAreaView,
   Platform,
   Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ChevronLeft,
@@ -67,7 +67,12 @@ export default function ReportDetailScreen() {
         showsVerticalScrollIndicator={false}>
         {/* Photo Evidence with Location Pill */}
         <View style={styles.imageCard}>
-          <Image source={{ uri: report.photoUrl }} style={styles.mainImage} />
+          <Image
+            source={{ uri: report.photoUrl }}
+            style={styles.mainImage}
+            contentFit="cover"
+            transition={250}
+          />
           <View style={styles.imageCoordsPill}>
             <MapPin size={12} color="#60A5FA" />
             <Text style={styles.imageCoordsText}>
@@ -186,7 +191,7 @@ const styles = StyleSheet.create({
   imageCard: {
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#000000',
+    backgroundColor: '#E2E8F0',
     height: 220,
     marginBottom: 16,
     position: 'relative',

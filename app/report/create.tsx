@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Image,
   SafeAreaView,
   Platform,
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ChevronLeft,
@@ -73,9 +73,10 @@ export default function CreateReportScreen() {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Fallbacks from params
+  // Fallbacks from params & safe decode
+  const rawUri = params.photoUri ? decodeURIComponent(params.photoUri) : null;
   const photoUri =
-    params.photoUri ||
+    rawUri ||
     'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&auto=format&fit=crop&q=80';
   const latitude = params.lat ? parseFloat(params.lat) : -2.9787;
   const longitude = params.lng ? parseFloat(params.lng) : 104.7603;
@@ -291,7 +292,12 @@ export default function CreateReportScreen() {
 
             {/* Photo Card with Watermark */}
             <View style={styles.previewImageCard}>
-              <Image source={{ uri: photoUri }} style={styles.previewImage} />
+              <Image
+                source={{ uri: photoUri }}
+                style={styles.previewImage}
+                contentFit="cover"
+                transition={250}
+              />
               <View style={styles.photoWatermarkTag}>
                 <View style={styles.watermarkLine}>
                   <MapPin size={13} color="#93C5FD" />
@@ -586,7 +592,7 @@ const styles = StyleSheet.create({
   previewImageCard: {
     borderRadius: 16,
     overflow: 'hidden',
-    backgroundColor: '#000',
+    backgroundColor: '#E2E8F0',
     position: 'relative',
     height: 220,
     marginBottom: 16,
